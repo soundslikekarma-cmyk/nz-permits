@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000";
+const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:8000" : "https://nz-permits.onrender.com";
 
 const form = document.getElementById("load-form");
 const submitBtn = document.getElementById("submit-btn");
@@ -14,11 +14,15 @@ form.addEventListener("submit", async (e) => {
   submitBtn.disabled = true;
   submitBtn.textContent = "Checking...";
 
+  const rawWeight = parseFloat(document.getElementById("weight").value);
+  const unit = document.getElementById("weight-unit").value;
+  const weightKg = unit === "t" ? Math.round(rawWeight * 1000) : Math.round(rawWeight);
+
   const payload = {
     width_m: parseFloat(document.getElementById("width").value),
     height_m: parseFloat(document.getElementById("height").value),
     length_m: parseFloat(document.getElementById("length").value),
-    weight_kg: parseInt(document.getElementById("weight").value, 10),
+    weight_kg: weightKg,
     indivisible: document.getElementById("indivisible").checked,
   };
 
@@ -48,18 +52,19 @@ function renderResult(data) {
   const pilots = formatPilots(data.pilots);
 
   resultContent.innerHTML = `
+    <div class="status-banner badge-${data.permit_status}">
+      ${escapeHtml(data.permit_status_label)}
+    </div>
+
     <dl class="result-summary">
-      <dt>Category</dt>
-      <dd><span class="badge ${data.category}">${data.category_label}</span></dd>
+      <dt>Dimension category</dt>
+      <dd>${escapeHtml(data.category_label)}</dd>
 
       <dt>Overdimension</dt>
       <dd>${data.overdimension ? "Yes" : "No"}</dd>
 
       <dt>Overweight</dt>
       <dd>${data.overweight ? "Yes" : "No"}</dd>
-
-      <dt>Permit required</dt>
-      <dd>${data.requires_permit ? "Yes" : "No"}</dd>
 
       <dt>Engineering assessment</dt>
       <dd>${data.requires_engineering_assessment ? "Yes — Cat 4B" : "No"}</dd>
@@ -106,5 +111,16 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+document.getElementById("reset-btn").addEventListener("click", () => {
+  document.getElementById("width").value = 6.5;
+  document.getElementById("height").value = 5.2;
+  document.getElementById("length").value = 14.0;
+  document.getElementById("weight").value = 28;
+  document.getElementById("weight-unit").value = "t";
+  document.getElementById("indivisible").checked = true;
+  hideResult();
+  hideError();
+});
 
 console.log("NZ Heavy Haulage Permits — frontend ready");

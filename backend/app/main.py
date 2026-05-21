@@ -8,6 +8,7 @@ from app.models import (
     LoadRequest,
     PilotInfo,
     CATEGORY_LABELS,
+    PERMIT_STATUS_LABELS,
 )
 
 app = FastAPI(
@@ -18,13 +19,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -47,9 +43,24 @@ def classify(load: LoadRequest) -> ClassificationResponse:
             indivisible=load.indivisible,
         )
     )
+    if result.requires_engineering_assessment:
+        permit_status = "cat_4b"
+    else:
+        is_overdim_permit = result.category.value in ("cat_3", "cat_4a")
+        if is_overdim_permit and result.overweight:
+            permit_status = "both"
+        elif is_overdim_permit:
+            permit_status = "overdimension"
+        elif result.overweight:
+            permit_status = "overweight"
+        else:
+            permit_status = "none"
+
     return ClassificationResponse(
         category=result.category.value,
         category_label=CATEGORY_LABELS[result.category.value],
+        permit_status=permit_status,
+        permit_status_label=PERMIT_STATUS_LABELS[permit_status],
         overdimension=result.overdimension,
         overweight=result.overweight,
         requires_permit=result.requires_permit,

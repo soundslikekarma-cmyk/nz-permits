@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>NZ Heavy Haulage Permits</h1>
-    <p class="tagline">MVP — load classifier</p>
+    <p class="tagline">VDAM Rule 2016 — load classifier &amp; permit guide</p>
   </header>
 
   <main>
@@ -29,8 +29,14 @@
           <input type="number" id="length" name="length_m" step="0.01" min="0.1" max="50" required value="14.0" />
         </div>
         <div class="row">
-          <label for="weight">Weight (kg)</label>
-          <input type="number" id="weight" name="weight_kg" step="1" min="1" max="300000" required value="28000" />
+          <label for="weight">Weight</label>
+          <div class="weight-input-group">
+            <input type="number" id="weight" name="weight" step="0.1" min="0" required value="28" />
+            <select id="weight-unit" aria-label="Weight unit">
+              <option value="t" selected>tonnes</option>
+              <option value="kg">kg</option>
+            </select>
+          </div>
         </div>
         <div class="row checkbox-row">
           <label for="indivisible">
@@ -38,7 +44,10 @@
             Load is indivisible
           </label>
         </div>
-        <button type="submit" id="submit-btn">Classify load</button>
+        <div class="button-row">
+          <button type="button" id="reset-btn" class="secondary">Reset</button>
+          <button type="submit" id="submit-btn">Classify load</button>
+        </div>
       </form>
     </section>
 

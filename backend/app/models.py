@@ -17,7 +17,7 @@ class LoadRequest(BaseModel):
     width_m: float = Field(gt=0, le=15, description="Total width including overhang, metres")
     height_m: float = Field(gt=0, le=8, description="Total height from ground, metres")
     length_m: float = Field(gt=0, le=50, description="Total combination length, metres")
-    weight_kg: int = Field(gt=0, le=300_000, description="Total weight, kilograms")
+    weight_kg: int = Field(gt=0, le=500_000, description="Total weight, kilograms")
     indivisible: bool = Field(default=True, description="Is the load indivisible?")
 
 
@@ -31,7 +31,9 @@ class PilotInfo(BaseModel):
 class ClassificationResponse(BaseModel):
     """Result of classifying a load."""
     category: str
-    category_label: str  # Human-readable label
+    category_label: str
+    permit_status: str          # NEW
+    permit_status_label: str    # NEW
     overdimension: bool
     overweight: bool
     requires_permit: bool
@@ -41,10 +43,19 @@ class ClassificationResponse(BaseModel):
 
 
 CATEGORY_LABELS = {
-    "standard": "Standard (no permit required)",
+    "standard": "Standard",
     "cat_1": "Category 1 — minor overdimension",
     "cat_2": "Category 2 — overdimension",
     "cat_3": "Category 3 — permit required",
     "cat_4a": "Category 4A — permit required (very large)",
     "cat_4b": "Category 4B — permit + engineering assessment required",
+}
+
+
+PERMIT_STATUS_LABELS = {
+    "none": "No permit required",
+    "overweight": "Overweight permit required",
+    "overdimension": "Overdimension permit required",
+    "both": "Overdimension + overweight permits required",
+    "cat_4b": "Cat 4B — permit + engineering assessment required",
 }

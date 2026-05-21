@@ -151,3 +151,79 @@ footer {
 
 .error { border-color: var(--error); }
 .error h2 { color: var(--error); }
+
+.status-banner {
+  display: block;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.02em;
+}
+
+.badge-none {
+  background: #2d4a2b;
+  color: var(--good);
+}
+
+.badge-overweight {
+  background: #4a3f1c;
+  color: var(--warning);
+}
+
+.badge-overdimension,
+.badge-both,
+.badge-cat_4b {
+  background: #4a1f1f;
+  color: var(--error);
+}
+
+.weight-input-group {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.weight-input-group input[type="number"] {
+  flex: 1;
+}
+
+.weight-input-group select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.weight-input-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.button-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.button-row button {
+  margin-top: 0;
+  flex: 1;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+button.secondary:hover {
+  background: var(--card);
+  border-color: var(--muted);
+}

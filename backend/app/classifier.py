@@ -50,7 +50,7 @@ class ClassificationResult:
 STANDARD_WIDTH_M = 2.55
 STANDARD_HEIGHT_M = 4.30
 STANDARD_LENGTH_M = 22.00   # Standard truck-trailer combination
-STANDARD_WEIGHT_KG = 44_000  # Simplified — actual depends on axle config
+STANDARD_WEIGHT_KG = 44_500  # Simplified — actual depends on axle config
 
 CAT_1_MAX_WIDTH = 3.10
 CAT_2_MAX_WIDTH = 3.70
@@ -96,7 +96,7 @@ def classify_load(load: LoadInput) -> ClassificationResult:
     pilots = _determine_pilots(load.width_m, category)
 
     # Permit requirements
-    requires_permit = category in (Category.CAT_3, Category.CAT_4A, Category.CAT_4B)
+    requires_permit = category in (Category.CAT_3, Category.CAT_4A, Category.CAT_4B) or overweight
     requires_engineering = category == Category.CAT_4B
 
     # Notes / warnings

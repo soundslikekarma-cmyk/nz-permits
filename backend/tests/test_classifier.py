@@ -110,3 +110,27 @@ def test_boundary_width_exactly_3_10():
     result = classify_load(load)
     assert result.category == Category.CAT_1
     assert result.pilots.front_count == 0  # boundary inclusive of "no pilot"
+
+
+def test_overweight_narrow_load_still_needs_permit():
+    """An overweight load needs a permit even if narrow (Cat 1)."""
+    load = LoadInput(width_m=3.0, height_m=4.0, length_m=10.0, weight_kg=400_000)
+    result = classify_load(load)
+    assert result.overweight is True
+    assert result.requires_permit is True, "Overweight loads must require a permit"
+
+
+def test_overweight_standard_dimension_still_needs_permit():
+    """A standard-width overweight load needs a permit."""
+    load = LoadInput(width_m=2.5, height_m=4.0, length_m=20.0, weight_kg=60_000)
+    result = classify_load(load)
+    assert result.category == Category.STANDARD
+    assert result.overweight is True
+    assert result.requires_permit is True
+
+
+def test_at_new_weight_threshold():
+    """44,500kg is at the boundary — should NOT be overweight."""
+    load = LoadInput(width_m=2.5, height_m=4.0, length_m=20.0, weight_kg=44_500)
+    result = classify_load(load)
+    assert result.overweight is False
