@@ -13,6 +13,10 @@ from app.models import (
 from app.routes_data import get_route_options, check_route
 from app.models import RouteCheckRequest, RouteCheckResponse, RouteOption
 
+from fastapi import HTTPException, Query
+from app.database import init_db, create_job, get_job, list_jobs, delete_job
+from app.models import SaveJobRequest, JobResponse, DeleteResponse
+
 app = FastAPI(
     title="NZ Heavy Haulage Permits",
     description="MVP: load classification and permit assistance for NZ heavy haulage operators.",
@@ -26,6 +30,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    init_db()
 
 
 @app.get("/")
@@ -94,6 +103,49 @@ def check_route_endpoint(req: RouteCheckRequest) -> RouteCheckResponse:
         weight_kg=req.weight_kg,
     )
     if "error" in result:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=result["error"])
     return RouteCheckResponse(**result)
+
+
+@app.post("/jobs", response_model=JobResponse, status_code=201)
+def save_job(req: SaveJobRequest) -> JobResponse:
+    """Save a new job for a device."""
+    job = create_job(
+        device_id=req.device_id,
+        name=req.name,
+        load_input=req.load_input,
+        classification=req.classification,
+        route_check=req.route_check,
+    )
+    return JobResponse(**job)
+
+
+@app.get("/jobs", response_model=list[JobResponse])
+def list_jobs_endpoint(
+    device_id: str = Query(..., min_length=8, max_length=100),
+    limit: int = Query(50, ge=1, le=200),
+) -> list[JobResponse]:
+    """List jobs belonging to a device."""
+    jobs = list_jobs(device_id=device_id, limit=limit)
+    return [JobResponse(**j) for j in jobs]
+
+
+@app.get("/jobs/{job_id}", response_model=JobResponse)
+def get_job_endpoint(job_id: str) -> JobResponse:
+    """Fetch a specific job by ID."""
+    job = get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JobResponse(**job)
+
+
+@app.delete("/jobs/{job_id}", response_model=DeleteResponse)
+def delete_job_endpoint(
+    job_id: str,
+    device_id: str = Query(..., min_length=8, max_length=100),
+) -> DeleteResponse:
+    """Delete a job. Requires the device_id that owns it."""
+    deleted = delete_job(job_id=job_id, device_id=device_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Job not found or not owned by device")
+    return DeleteResponse(deleted=True, job_id=job_id)

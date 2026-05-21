@@ -8,8 +8,21 @@
 </head>
 <body>
   <header>
-    <h1>NZ Heavy Haulage Permits</h1>
-    <p class="tagline">Check if your load needs a permit · VDAM Rule 2016</p>
+    <div class="header-inner">
+      <div class="header-title">
+        <h1>NZ Heavy Haulage Permits</h1>
+        <p class="tagline">Check if your load needs a permit · VDAM Rule 2016</p>
+      </div>
+      <div class="saved-jobs-dropdown" id="saved-jobs-dropdown" hidden>
+        <button type="button" id="saved-jobs-toggle" class="dropdown-toggle">
+          <span id="saved-jobs-count-label">Saved jobs</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="dropdown-panel" id="saved-jobs-panel" hidden>
+          <div id="saved-jobs-list"></div>
+        </div>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -74,11 +87,31 @@
       <div id="route-result-content"></div>
     </section>
 
+    <section class="card" id="save-job-card" hidden>
+      <h2>3. Save this job</h2>
+      <p class="card-help">Keep this job for later. You'll be able to load it back any time.</p>
+      <div class="button-row">
+        <button type="button" id="save-job-btn">Save job</button>
+      </div>
+    </section>
+
     <section class="card error" id="error-card" hidden>
       <h2>Error</h2>
       <p id="error-message"></p>
     </section>
   </main>
+
+  <div id="save-modal" class="modal" hidden>
+    <div class="modal-content">
+      <h3>Save job</h3>
+      <p class="modal-help">Give this job a name. You can change it later.</p>
+      <input type="text" id="save-job-name" maxlength="200" />
+      <div class="button-row">
+        <button type="button" id="save-cancel-btn" class="secondary">Cancel</button>
+        <button type="button" id="save-confirm-btn">Save</button>
+      </div>
+    </div>
+  </div>
 
   <footer>
     <small>NZ Heavy Haulage Permits MVP · VDAM Rule 2016</small>

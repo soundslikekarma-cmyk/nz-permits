@@ -109,3 +109,37 @@ class RouteOption(BaseModel):
     label: str
     via: str
     distance_km: int
+
+
+class SaveJobRequest(BaseModel):
+    """Request to save a job."""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "device_id": "550e8400-e29b-41d4-a716-446655440000",
+            "name": "Tauranga house move - 28t",
+            "load_input": {"width_m": 6.5, "height_m": 5.2, "length_m": 14.0, "weight_kg": 28000, "indivisible": True},
+            "classification": {"category": "cat_4b", "category_label": "Category 4B"},
+            "route_check": None,
+        }
+    })
+    device_id: str = Field(min_length=8, max_length=100)
+    name: str = Field(min_length=1, max_length=200)
+    load_input: dict
+    classification: dict
+    route_check: dict | None = None
+
+
+class JobResponse(BaseModel):
+    id: str
+    device_id: str
+    name: str
+    load_input: dict
+    classification: dict
+    route_check: dict | None
+    created_at: str
+    updated_at: str
+
+
+class DeleteResponse(BaseModel):
+    deleted: bool
+    job_id: str

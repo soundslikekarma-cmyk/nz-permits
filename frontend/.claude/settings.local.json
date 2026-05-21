@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(Get-Content *)",
-      "PowerShell([System.IO.File]::WriteAllText\\(\"C:\\\\Users\\\\just1\\\\code\\\\nz-permits\\\\backend\\\\runtime.txt\", \"3.11.9\"\\); $bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\just1\\\\code\\\\nz-permits\\\\backend\\\\runtime.txt\"\\); \"byte count: $\\($bytes.Length\\)\"; \"bytes: $\\($bytes -join ','\\)\")"
+      "PowerShell([System.IO.File]::WriteAllText\\(\"C:\\\\Users\\\\just1\\\\code\\\\nz-permits\\\\backend\\\\runtime.txt\", \"3.11.9\"\\); $bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\just1\\\\code\\\\nz-permits\\\\backend\\\\runtime.txt\"\\); \"byte count: $\\($bytes.Length\\)\"; \"bytes: $\\($bytes -join ','\\)\")",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/docs\" -UseBasicParsing -TimeoutSec 5; \"STEP 1: status=$\\($r.StatusCode\\), length=$\\($r.Content.Length\\) bytes, contentType=$\\($r.Headers.'Content-Type'\\)\" } catch { \"STEP 1 FAILED: $\\($_.Exception.Message\\)\" })"
     ]
   }
 }
