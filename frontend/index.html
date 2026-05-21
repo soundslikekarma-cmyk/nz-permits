@@ -9,12 +9,12 @@
 <body>
   <header>
     <h1>NZ Heavy Haulage Permits</h1>
-    <p class="tagline">VDAM Rule 2016 — load classifier &amp; permit guide</p>
+    <p class="tagline">Check if your load needs a permit · VDAM Rule 2016</p>
   </header>
 
   <main>
     <section class="card">
-      <h2>Check a load</h2>
+      <h2>1. Check a load</h2>
       <form id="load-form">
         <div class="row">
           <label for="width">Width (m)</label>
@@ -52,8 +52,26 @@
     </section>
 
     <section class="card result" id="result-card" hidden>
-      <h2>Result</h2>
+      <h2>Load classification</h2>
       <div id="result-content"></div>
+    </section>
+
+    <section class="card" id="route-card" hidden>
+      <h2>2. Check this load against a route</h2>
+      <div class="row">
+        <label for="route-select">Route</label>
+        <select id="route-select">
+          <option value="">Loading routes...</option>
+        </select>
+      </div>
+      <div class="button-row">
+        <button type="button" id="check-route-btn">Check route</button>
+      </div>
+    </section>
+
+    <section class="card result" id="route-result-card" hidden>
+      <h2>Route check</h2>
+      <div id="route-result-content"></div>
     </section>
 
     <section class="card error" id="error-card" hidden>
