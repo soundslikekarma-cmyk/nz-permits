@@ -10,6 +10,8 @@ from app.models import (
     CATEGORY_LABELS,
     PERMIT_STATUS_LABELS,
 )
+from app.routes_data import get_route_options, check_route
+from app.models import RouteCheckRequest, RouteCheckResponse, RouteOption
 
 app = FastAPI(
     title="NZ Heavy Haulage Permits",
@@ -73,3 +75,25 @@ def classify(load: LoadRequest) -> ClassificationResponse:
         ),
         notes=result.notes,
     )
+
+
+@app.get("/routes", response_model=list[RouteOption])
+def list_routes() -> list[RouteOption]:
+    """List all pre-defined heavy haulage routes available for checking."""
+    return [RouteOption(**r) for r in get_route_options()]
+
+
+@app.post("/check-route", response_model=RouteCheckResponse)
+def check_route_endpoint(req: RouteCheckRequest) -> RouteCheckResponse:
+    """Check a load against a pre-defined route's known issues."""
+    result = check_route(
+        route_id=req.route_id,
+        width_m=req.width_m,
+        height_m=req.height_m,
+        length_m=req.length_m,
+        weight_kg=req.weight_kg,
+    )
+    if "error" in result:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=result["error"])
+    return RouteCheckResponse(**result)

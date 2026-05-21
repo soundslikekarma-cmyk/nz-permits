@@ -59,3 +59,53 @@ PERMIT_STATUS_LABELS = {
     "both": "Overdimension + overweight permits required",
     "cat_4b": "Cat 4B — permit + engineering assessment required",
 }
+
+
+class RouteCheckRequest(BaseModel):
+    """Combined request: classify a load AND check it against a route."""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "route_id": "tauranga_auckland",
+            "width_m": 6.5,
+            "height_m": 5.2,
+            "length_m": 14.0,
+            "weight_kg": 28000,
+            "indivisible": True,
+        }
+    })
+    route_id: str = Field(description="One of the predefined route IDs")
+    width_m: float = Field(gt=0, le=15)
+    height_m: float = Field(gt=0, le=8)
+    length_m: float = Field(gt=0, le=50)
+    weight_kg: int = Field(gt=0, le=500_000)
+    indivisible: bool = True
+
+
+class RouteIssueResponse(BaseModel):
+    title: str
+    description: str
+    severity: str
+
+
+class RouteSummary(BaseModel):
+    total: int
+    blockers: int
+    warnings: int
+    info: int
+    clear_to_proceed: bool
+
+
+class RouteCheckResponse(BaseModel):
+    route_id: str
+    route_label: str
+    distance_km: int
+    typical_via: str
+    issues: list[RouteIssueResponse]
+    summary: RouteSummary
+
+
+class RouteOption(BaseModel):
+    id: str
+    label: str
+    via: str
+    distance_km: int
