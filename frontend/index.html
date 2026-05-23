@@ -71,11 +71,17 @@
 
     <section class="card" id="route-card" hidden>
       <h2>2. Check this load against a route</h2>
-      <div class="row">
-        <label for="route-select">Route</label>
-        <select id="route-select">
-          <option value="">Loading routes...</option>
-        </select>
+      <p class="card-help">Pick a common route, or type your own (e.g. "Mt Maunganui → SH29 → Hamilton").</p>
+      <div class="combobox-wrapper">
+        <input
+          type="text"
+          id="route-input"
+          autocomplete="off"
+          placeholder="Type or pick a route..."
+          aria-label="Route"
+        />
+        <button type="button" class="combobox-toggle" id="route-input-toggle" aria-label="Show route options">▾</button>
+        <ul class="combobox-options" id="route-options" hidden></ul>
       </div>
       <div class="button-row">
         <button type="button" id="check-route-btn">Check route</button>

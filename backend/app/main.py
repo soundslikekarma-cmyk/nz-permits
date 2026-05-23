@@ -10,8 +10,8 @@ from app.models import (
     CATEGORY_LABELS,
     PERMIT_STATUS_LABELS,
 )
-from app.routes_data import get_route_options, check_route
-from app.models import RouteCheckRequest, RouteCheckResponse, RouteOption
+from app.routes_data import get_route_options, check_route, check_route_text
+from app.models import RouteCheckRequest, RouteCheckResponse, RouteOption, RouteCheckTextRequest, RouteCheckTextResponse
 
 from fastapi import HTTPException, Query
 from app.database import init_db, create_job, get_job, list_jobs, delete_job
@@ -105,6 +105,19 @@ def check_route_endpoint(req: RouteCheckRequest) -> RouteCheckResponse:
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return RouteCheckResponse(**result)
+
+
+@app.post("/check-route-text", response_model=RouteCheckTextResponse)
+def check_route_text_endpoint(req: RouteCheckTextRequest) -> RouteCheckTextResponse:
+    """Check a load against a free-text route description."""
+    result = check_route_text(
+        text=req.route_text,
+        width_m=req.width_m,
+        height_m=req.height_m,
+        length_m=req.length_m,
+        weight_kg=req.weight_kg,
+    )
+    return RouteCheckTextResponse(**result)
 
 
 @app.post("/jobs", response_model=JobResponse, status_code=201)

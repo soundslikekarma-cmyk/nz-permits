@@ -12,13 +12,16 @@ function getDeviceId() {
 }
 const DEVICE_ID = getDeviceId();
 
+// Element references
 const form = document.getElementById("load-form");
 const submitBtn = document.getElementById("submit-btn");
 const resetBtn = document.getElementById("reset-btn");
 const resultCard = document.getElementById("result-card");
 const resultContent = document.getElementById("result-content");
 const routeCard = document.getElementById("route-card");
-const routeSelect = document.getElementById("route-select");
+const routeInput = document.getElementById("route-input");
+const routeInputToggle = document.getElementById("route-input-toggle");
+const routeOptions = document.getElementById("route-options");
 const checkRouteBtn = document.getElementById("check-route-btn");
 const routeResultCard = document.getElementById("route-result-card");
 const routeResultContent = document.getElementById("route-result-content");
@@ -36,10 +39,14 @@ const saveJobNameInput = document.getElementById("save-job-name");
 const saveCancelBtn = document.getElementById("save-cancel-btn");
 const saveConfirmBtn = document.getElementById("save-confirm-btn");
 
+// State
 let currentLoad = null;
 let currentClassification = null;
 let currentRouteCheck = null;
+let allRoutes = [];           // [{id, label, via, distance_km}]
+let selectedRouteId = null;   // null = custom text route; string = picked pre-defined route
 
+// ===== Init =====
 async function init() {
   await loadRoutes();
   await refreshSavedJobs();
@@ -50,14 +57,13 @@ async function loadRoutes() {
   try {
     const r = await fetch(`${API_BASE}/routes`);
     if (!r.ok) throw new Error("Failed to load routes");
-    const routes = await r.json();
-    routeSelect.innerHTML = '<option value="">Select a route...</option>' +
-      routes.map(rt => `<option value="${rt.id}">${escapeHtml(rt.label)}</option>`).join("");
+    allRoutes = await r.json();
   } catch (err) {
-    routeSelect.innerHTML = '<option value="">Failed to load routes</option>';
+    allRoutes = [];
   }
 }
 
+// ===== Saved jobs dropdown =====
 async function refreshSavedJobs() {
   try {
     const r = await fetch(`${API_BASE}/jobs?device_id=${encodeURIComponent(DEVICE_ID)}`);
@@ -104,23 +110,18 @@ function renderSavedJobs(jobs) {
   });
 }
 
-// Saved jobs dropdown toggle
 savedJobsToggle.addEventListener("click", (e) => {
   e.stopPropagation();
   const isOpen = !savedJobsPanel.hidden;
-  if (isOpen) {
-    closeSavedJobsPanel();
-  } else {
+  if (isOpen) closeSavedJobsPanel();
+  else {
     savedJobsPanel.hidden = false;
     savedJobsToggle.classList.add("open");
   }
 });
 
-// Close dropdown if clicking outside
 document.addEventListener("click", (e) => {
-  if (!savedJobsDropdown.contains(e.target) && !savedJobsPanel.hidden) {
-    closeSavedJobsPanel();
-  }
+  if (!savedJobsDropdown.contains(e.target) && !savedJobsPanel.hidden) closeSavedJobsPanel();
 });
 
 function closeSavedJobsPanel() {
@@ -153,12 +154,23 @@ async function loadJob(jobId) {
     routeCard.hidden = false;
     if (job.route_check) {
       renderRouteCheck(job.route_check);
-      // Try to restore the route dropdown selection if route id matches
       if (job.route_check.route_id) {
-        routeSelect.value = job.route_check.route_id;
+        const r = allRoutes.find(x => x.id === job.route_check.route_id);
+        if (r) {
+          routeInput.value = r.label;
+          selectedRouteId = r.id;
+        } else {
+          routeInput.value = job.route_check.route_label || "";
+          selectedRouteId = null;
+        }
+      } else {
+        routeInput.value = job.route_check.route_label || "";
+        selectedRouteId = null;
       }
     } else {
       routeResultCard.hidden = true;
+      routeInput.value = "";
+      selectedRouteId = null;
     }
     saveJobCard.hidden = false;
   } catch (err) {
@@ -177,6 +189,67 @@ async function deleteJob(jobId) {
   }
 }
 
+// ===== Route combobox =====
+function openRouteOptions(filter = "") {
+  const f = (filter || "").trim().toLowerCase();
+  const matches = f
+    ? allRoutes.filter(r => r.label.toLowerCase().includes(f) || (r.via || "").toLowerCase().includes(f))
+    : allRoutes.slice();
+
+  let html = "";
+  if (matches.length > 0) {
+    html += matches.map(r => `
+      <li data-route-id="${r.id}" data-route-label="${escapeAttr(r.label)}">
+        ${escapeHtml(r.label)}
+        <span class="option-via">${escapeHtml(r.via || "")}</span>
+      </li>
+    `).join("");
+  } else {
+    html += `<li class="no-match">No common route matches — your text will be checked as a free-text route</li>`;
+  }
+  if (f) {
+    html += `<li class="custom-option" data-route-id="" data-route-label="${escapeAttr(filter)}">Use what I typed: "${escapeHtml(filter)}"</li>`;
+  }
+  routeOptions.innerHTML = html;
+  routeOptions.hidden = false;
+
+  routeOptions.querySelectorAll("li[data-route-id]").forEach(li => {
+    li.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      const id = li.dataset.routeId;
+      const label = li.dataset.routeLabel;
+      routeInput.value = label;
+      selectedRouteId = id || null;
+      routeOptions.hidden = true;
+    });
+  });
+}
+
+function closeRouteOptions() {
+  routeOptions.hidden = true;
+}
+
+routeInput.addEventListener("focus", () => openRouteOptions(routeInput.value));
+routeInput.addEventListener("input", () => {
+  // Once user types, they're going off-script — clear selectedRouteId
+  selectedRouteId = null;
+  openRouteOptions(routeInput.value);
+});
+routeInput.addEventListener("blur", () => {
+  // Delay so mousedown on an option fires first
+  setTimeout(closeRouteOptions, 120);
+});
+routeInputToggle.addEventListener("mousedown", (e) => {
+  e.preventDefault();
+  if (routeOptions.hidden) {
+    routeInput.focus();
+    openRouteOptions(routeInput.value);
+  } else {
+    closeRouteOptions();
+  }
+});
+
+// ===== Classification flow =====
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   hideError();
@@ -215,6 +288,8 @@ form.addEventListener("submit", async (e) => {
     renderClassification(data);
     routeCard.hidden = false;
     saveJobCard.hidden = false;
+    routeInput.value = "";
+    selectedRouteId = null;
   } catch (err) {
     showError(err.message || "Something went wrong");
   } finally {
@@ -223,24 +298,40 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
+// ===== Route check =====
 checkRouteBtn.addEventListener("click", async () => {
   if (!currentLoad) { showError("Classify a load first."); return; }
-  const routeId = routeSelect.value;
-  if (!routeId) { showError("Pick a route."); return; }
+  const text = routeInput.value.trim();
+  if (!text) { showError("Type or pick a route."); return; }
   hideError();
   checkRouteBtn.disabled = true;
   checkRouteBtn.textContent = "Checking...";
+
   try {
-    const r = await fetch(`${API_BASE}/check-route`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...currentLoad, route_id: routeId }),
-    });
-    if (!r.ok) {
-      const errBody = await r.json().catch(() => ({}));
-      throw new Error(errBody.detail || `HTTP ${r.status}`);
+    let data;
+    if (selectedRouteId) {
+      const r = await fetch(`${API_BASE}/check-route`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...currentLoad, route_id: selectedRouteId }),
+      });
+      if (!r.ok) {
+        const errBody = await r.json().catch(() => ({}));
+        throw new Error(errBody.detail || `HTTP ${r.status}`);
+      }
+      data = await r.json();
+    } else {
+      const r = await fetch(`${API_BASE}/check-route-text`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...currentLoad, route_text: text }),
+      });
+      if (!r.ok) {
+        const errBody = await r.json().catch(() => ({}));
+        throw new Error(errBody.detail?.[0]?.msg || errBody.detail || `HTTP ${r.status}`);
+      }
+      data = await r.json();
     }
-    const data = await r.json();
     currentRouteCheck = data;
     renderRouteCheck(data);
   } catch (err) {
@@ -251,6 +342,7 @@ checkRouteBtn.addEventListener("click", async () => {
   }
 });
 
+// ===== Reset =====
 resetBtn.addEventListener("click", () => {
   document.getElementById("width").value = 6.5;
   document.getElementById("height").value = 5.2;
@@ -263,11 +355,14 @@ resetBtn.addEventListener("click", () => {
   routeResultCard.hidden = true;
   saveJobCard.hidden = true;
   hideError();
+  routeInput.value = "";
+  selectedRouteId = null;
   currentLoad = null;
   currentClassification = null;
   currentRouteCheck = null;
 });
 
+// ===== Save job =====
 saveJobBtn.addEventListener("click", () => {
   if (!currentLoad || !currentClassification) return;
   const li = currentLoad;
@@ -315,6 +410,7 @@ saveJobNameInput.addEventListener("keydown", (e) => {
   if (e.key === "Escape") saveCancelBtn.click();
 });
 
+// ===== Rendering =====
 function renderClassification(data) {
   const pilots = formatPilots(data.pilots);
   resultContent.innerHTML = `
@@ -344,6 +440,9 @@ function renderClassification(data) {
 }
 
 function renderRouteCheck(data) {
+  const matchedKeywordsHtml = data.matched_keywords && data.matched_keywords.length > 0
+    ? `<div class="matched-keywords">Matched: ${data.matched_keywords.map(k => `<code>${escapeHtml(k)}</code>`).join(" ")}</div>`
+    : "";
   const issuesHtml = data.issues.length === 0
     ? `<div class="route-clear">✓ No known issues for this load on this route</div>`
     : `<div class="issue-list">
@@ -360,14 +459,15 @@ function renderRouteCheck(data) {
   routeResultContent.innerHTML = `
     <div class="route-summary">
       <span>${escapeHtml(data.route_label)}</span>
-      <span>${data.distance_km} km</span>
-      <span>Via: ${escapeHtml(data.typical_via)}</span>
+      ${data.distance_km ? `<span>${data.distance_km} km</span>` : ""}
+      <span>${escapeHtml(data.typical_via)}</span>
     </div>
     <div class="route-summary">
       <span>${data.summary.blockers} blocker${data.summary.blockers === 1 ? '' : 's'}</span>
       <span>${data.summary.warnings} warning${data.summary.warnings === 1 ? '' : 's'}</span>
       <span>${data.summary.info} info</span>
     </div>
+    ${matchedKeywordsHtml}
     ${issuesHtml}
   `;
   routeResultCard.hidden = false;
@@ -398,6 +498,9 @@ function escapeHtml(text) {
   div.textContent = String(text);
   return div.innerHTML;
 }
+function escapeAttr(text) {
+  return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
-console.log("NZ Heavy Haulage Permits — frontend ready");
+console.log("NZ Heavy Haulage Permits — frontend ready (combobox route input)");
 console.log("Device ID:", DEVICE_ID);

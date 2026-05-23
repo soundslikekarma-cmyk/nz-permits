@@ -143,3 +143,34 @@ class JobResponse(BaseModel):
 class DeleteResponse(BaseModel):
     deleted: bool
     job_id: str
+
+
+class RouteCheckTextRequest(BaseModel):
+    """Free-text route check request."""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "route_text": "Tauranga → SH29 → Hamilton",
+            "width_m": 6.5,
+            "height_m": 5.2,
+            "length_m": 14.0,
+            "weight_kg": 28000,
+            "indivisible": True,
+        }
+    })
+    route_text: str = Field(min_length=1, max_length=500)
+    width_m: float = Field(gt=0, le=15)
+    height_m: float = Field(gt=0, le=8)
+    length_m: float = Field(gt=0, le=50)
+    weight_kg: int = Field(gt=0, le=500_000)
+    indivisible: bool = True
+
+
+class RouteCheckTextResponse(BaseModel):
+    """Response shape mirrors RouteCheckResponse but adds matched_keywords."""
+    route_id: str | None
+    route_label: str
+    distance_km: int
+    typical_via: str
+    issues: list[RouteIssueResponse]
+    summary: RouteSummary
+    matched_keywords: list[str]
